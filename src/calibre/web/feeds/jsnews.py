@@ -381,6 +381,7 @@ class JavascriptRecipe(BasicNewsRecipe):
                         remove_after=self.remove_tags_after,
                         remove_javascript=self.remove_javascript,
                         delay=self.delay,
+                        selector=self.selector,
                         resource_cache=resource_cache, output_dir=art_dir, browser=browser)
                 except AbortFetch:
                     self.log.exception('Fetching of article: %r aborted' % article.title)

@@ -207,6 +207,7 @@ def fetch_page(
     resource_cache={},
     output_dir=None,
     browser=None,
+    selector=None,
     recursion_level=0
     ):
 
@@ -220,7 +221,11 @@ def fetch_page(
     # Load the DOM
     if url is not None:
         start_time = time.time()
-        browser.start_load(url)
+        if selector is not None:  
+            browser.start_load(url, selector=selector)
+        else:
+            browser.start_load(url)
+
         while not load_complete(browser, url, recursion_level):
             browser.run_for_a_time(0.1)
             if time.time() - start_time > browser.default_timeout:
