@@ -158,8 +158,15 @@ class RecursiveFetcher(object):
         self.failed_links = []
         self.job_info = job_info
         # use phantomjs fetch web 
-        self.use_phantomjs_fetch_web = options.use_phantomjs_fetch_web
-        self.phantomjs_page_time =  options.phantomjs_page_time
+        self.use_phantomjs_fetch_web = False 
+        self.phantomjs_page_time =  0
+        try:
+            self.use_phantomjs_fetch_web = options.use_phantomjs_fetch_web
+            self.phantomjs_page_time =  options.phantomjs_page_time
+        except AttributeError:
+            #  self.use_phantomjs_fetch_web   self.phantomjs_page_time
+            pass 
+
 
     def get_soup(self, src, url=None):
         nmassage = copy.copy(BeautifulSoup.MARKUP_MASSAGE)

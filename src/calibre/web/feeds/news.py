@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import with_statement
 __license__   = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal <kovid at kovidgoyal.net>'
@@ -954,8 +956,17 @@ class BasicNewsRecipe(Recipe):
         self.web2disk_options.encoding = self.encoding
         self.web2disk_options.preprocess_raw_html = self.preprocess_raw_html_
 
-        self.web2disk_options.use_phantomjs_fetch_web = self.use_phantomjs_fetch_web 
-        self.web2disk_options.phantomjs_page_time = self.phantomjs_page_time 
+        try:
+            self.web2disk_options.use_phantomjs_fetch_web = self.use_phantomjs_fetch_web 
+            self.web2disk_options.phantomjs_page_time = self.phantomjs_page_time 
+        except AttributeError:
+            #  self.use_phantomjs_fetch_web   self.phantomjs_page_time
+            #  可能没有定义
+            pass 
+        # if self.use_phantomjs_fetch_web:
+            # self.web2disk_options.use_phantomjs_fetch_web = self.use_phantomjs_fetch_web 
+        # if self.phantomjs_page_time :
+            # self.web2disk_options.phantomjs_page_time = self.phantomjs_page_time 
 
         if self.delay > 0:
             self.simultaneous_downloads = 1
@@ -1195,7 +1206,7 @@ class BasicNewsRecipe(Recipe):
 
     def build_index(self):
         self.report_progress(0, _('Fetching feeds...'))
-        self.report_progress(0, _('in build index ...'))
+
         try:
             feeds = feeds_from_index(self.parse_index(), oldest_article=self.oldest_article,
                                      max_articles_per_feed=self.max_articles_per_feed,
