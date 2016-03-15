@@ -954,6 +954,9 @@ class BasicNewsRecipe(Recipe):
         self.web2disk_options.encoding = self.encoding
         self.web2disk_options.preprocess_raw_html = self.preprocess_raw_html_
 
+        self.web2disk_options.use_phantomjs_fetch_web = self.use_phantomjs_fetch_web 
+        self.web2disk_options.phantomjs_page_time = self.phantomjs_page_time 
+
         if self.delay > 0:
             self.simultaneous_downloads = 1
 
@@ -1130,6 +1133,7 @@ class BasicNewsRecipe(Recipe):
         else:
             br = self.clone_browser(self.browser)
         self.web2disk_options.browser = br
+
         fetcher = RecursiveFetcher(self.web2disk_options, self.log,
                 self.image_map, self.css_map,
                 (url, f, a, num_of_feeds))
@@ -1139,6 +1143,7 @@ class BasicNewsRecipe(Recipe):
         fetcher.show_progress = False
         fetcher.image_url_processor = self.image_url_processor
         res, path, failures = fetcher.start_fetch(url), fetcher.downloaded_paths, fetcher.failed_links
+        self.log.debug("res %s and os.path.exists %r" %( res,  os.path.exists(res)))
         if not res or not os.path.exists(res):
             msg = _('Could not fetch article.') + ' '
             if self.debug:
@@ -1190,6 +1195,7 @@ class BasicNewsRecipe(Recipe):
 
     def build_index(self):
         self.report_progress(0, _('Fetching feeds...'))
+        self.report_progress(0, _('in build index ...'))
         try:
             feeds = feeds_from_index(self.parse_index(), oldest_article=self.oldest_article,
                                      max_articles_per_feed=self.max_articles_per_feed,

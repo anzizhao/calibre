@@ -23,6 +23,8 @@ from calibre.utils.magick import Image
 from calibre.utils.magick.draw import identify_data, thumbnail
 from calibre.utils.imghdr import what
 
+from selenium import webdriver
+
 class AbortArticle(Exception):
     pass
 
@@ -155,6 +157,9 @@ class RecursiveFetcher(object):
         self.show_progress = True
         self.failed_links = []
         self.job_info = job_info
+        # use phantomjs fetch web 
+        self.use_phantomjs_fetch_web = options.use_phantomjs_fetch_web
+        self.phantomjs_page_time =  options.phantomjs_page_time
 
     def get_soup(self, src, url=None):
         nmassage = copy.copy(BeautifulSoup.MARKUP_MASSAGE)
@@ -246,27 +251,45 @@ class RecursiveFetcher(object):
             for i in range(2, 6):
                 purl[i] = quote(purl[i])
             url = urlparse.urlunparse(purl)
-        open_func = getattr(self.browser, 'open_novisit', self.browser.open)
-        try:
-            with closing(open_func(url, timeout=self.timeout)) as f:
-                data = response(f.read()+f.read())
-                data.newurl = f.geturl()
-        except urllib2.URLError as err:
-            if hasattr(err, 'code') and err.code in responses:
-                raise FetchError(responses[err.code])
-            if getattr(err, 'reason', [0])[0] == 104 or \
-                getattr(getattr(err, 'args', [None])[0], 'errno', None) in (-2,
-                        -3):  # Connection reset by peer or Name or service not known
-                self.log.debug('Temporary error, retrying in 1 second')
-                time.sleep(1)
+
+
+        if self.use_phantomjs_fetch_web:
+            self.log.debug('in the phantomjs , selenium webdirver %s' %
+                           (webdriver.__file__))
+            cap = webdriver.DesiredCapabilities.PHANTOMJS
+            cap["phantomjs.page.settings.resourceTimeout"] = 2000
+            driver= webdriver.PhantomJS(desired_capabilities=cap)
+            driver.get(url)
+            if self.phantomjs_page_time:  
+                time.sleep( self.phantomjs_page_time )
+
+            data = response(driver.page_source)
+            data.newurl = url 
+            driver.quit()
+
+        else: 
+            open_func = getattr(self.browser, 'open_novisit', self.browser.open)
+            try:
                 with closing(open_func(url, timeout=self.timeout)) as f:
                     data = response(f.read()+f.read())
                     data.newurl = f.geturl()
-            else:
-                raise err
-        finally:
-            self.last_fetch_at = time.time()
-        self.log.debug('Fetched %s in %f seconds' % (url, time.time() - st))
+            except urllib2.URLError as err:
+                if hasattr(err, 'code') and err.code in responses:
+                    raise FetchError(responses[err.code])
+                if getattr(err, 'reason', [0])[0] == 104 or \
+                    getattr(getattr(err, 'args', [None])[0], 'errno', None) in (-2,
+                            -3):  # Connection reset by peer or Name or service not known
+                    self.log.debug('Temporary error, retrying in 1 second')
+                    time.sleep(1)
+                    with closing(open_func(url, timeout=self.timeout)) as f:
+                        data = response(f.read()+f.read())
+                        data.newurl = f.geturl()
+                else:
+                    raise err
+            finally:
+                self.last_fetch_at = time.time()
+            self.log.debug('Fetched %s in %f seconds' % (url, time.time() - st))
+
         return data
 
     def start_fetch(self, url):
@@ -522,9 +545,11 @@ class RecursiveFetcher(object):
                     self.current_dir = linkdiskpath
                     dsrc = self.fetch_url(iurl)
                     newbaseurl = dsrc.newurl
-                    if len(dsrc) == 0 or \
-                       len(re.compile('<!--.*?-->', re.DOTALL).sub('', dsrc).strip()) == 0:
+                    # if len(dsrc) == 0 or \
+                    #   len(re.compile('<!--.*?-->', re.DOTALL).sub('', dsrc).strip()) == 0:
+                    if len(dsrc) == 0: 
                         raise ValueError('No content at URL %r'%iurl)
+
                     if callable(self.encoding):
                         dsrc = self.encoding(dsrc)
                     elif self.encoding is not None:

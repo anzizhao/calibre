@@ -210,11 +210,11 @@ def fetch_page(
     selector=None,
     recursion_level=0
     ):
-
     output_dir = output_dir or os.getcwdu()
     if browser is None:
         browser = jsbrowser()
 
+    browser.log('in fetch page ' )
     if delay:
         time.sleep(delay)
 
@@ -222,6 +222,7 @@ def fetch_page(
     if url is not None:
         start_time = time.time()
         if selector is not None:  
+            print ("browser.start_load(url, selector=selector)")
             browser.start_load(url, selector=selector)
         else:
             browser.start_load(url)
